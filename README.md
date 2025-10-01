@@ -1,0 +1,369 @@
+loadstring(game:HttpGet(("https://raw.githubusercontent.com/datpro/dat4949/refs/heads/main/scriptxin.lua"))()
+-- v4.0 (new logo) -- -- ======================================== -- SERVICES & INITIALIZATION if not game:IsLoaded() then game.Loaded:Wait() end -- ======================================== local cloneref = cloneref or function(o) return o end local Services = { Players = cloneref(game:GetService("Players")), TweenService = cloneref(game:GetService("TweenService")), UserInputService = cloneref(game:GetService("UserInputService")), RunService = cloneref(game:GetService("RunService")), CoreGui = cloneref(game:GetService("CoreGui")) }
+
+-- ======================================== -- CONFIGURATION -- ========================================
+
+local Config = { MaxKeyLength = 44, AnimationSpeed = 0.4, } local screenGui;
+
+-- ======================================== -- COLOR SCHEME -- ========================================
+
+local Colors = { Background = Color3.fromRGB(18, 18, 22), Surface = Color3.fromRGB(25, 25, 30), Primary = Color3.fromRGB(45, 45, 50), Secondary = Color3.fromRGB(35, 35, 40), Border = Color3.fromRGB(40, 40, 45), TextPrimary = Color3.fromRGB(220, 220, 225), TextSecondary = Color3.fromRGB(140, 140, 150), Success = Color3.fromRGB(25, 135, 84), Error = Color3.fromRGB(180, 50, 50), Warning = Color3.fromRGB(200, 120, 30), Discord = Color3.fromRGB(60, 70, 180), GetKey = Color3.fromRGB(40, 140, 100), HoverPrimary = Color3.fromRGB(55, 55, 60), HoverGetKey = Color3.fromRGB(30, 120, 80), NeonWhite = Color3.fromRGB(255, 255, 255), }
+
+-- ======================================== -- STATE MANAGEMENT -- ========================================
+
+local State = { IsLoading = false, Particles = {}, Animations = {}, IsDestroyed = false, MousePosition = { X = 0, Y = 0 }, FocusStates = { InputFocused = false, ButtonHovered = {}, AnimationsActive = true } }
+
+local UI = {}
+
+-- ======================================== -- NOTE: Key system removed -- The Luarmor key-checking logic and external API calls were removed to -- create a "keyless" version of the UI. The rest of the UI remains intact. -- ========================================
+
+-- ======================================== -- UI CREATION FUNCTIONS -- ========================================
+
+local function CreateMainGUI() local screenGui = Instance.new("ScreenGui") screenGui.Name = "KeySystemGUI" screenGui.ResetOnSpawn = false screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling screenGui.IgnoreGuiInset = true screenGui.DisplayOrder = 100 screenGui.Enabled = false
+
+if get_hidden_gui or gethui then
+    local hiddenUI = get_hidden_gui or gethui
+    screenGui.Parent = hiddenUI()
+elseif (not is_sirhurt_closure) and (syn and syn.protect_gui) then
+    syn.protect_gui(screenGui)
+    screenGui.Parent = Services.CoreGui
+elseif Services.CoreGui:FindFirstChild("RobloxGui") then
+    screenGui.Parent = Services.CoreGui.RobloxGui
+else
+    screenGui.Parent = Services.CoreGui
+end
+
+pcall(function() if LuarmorGot_System then LuarmorGot_System:Destroy() end end)
+getgenv().LuarmorGot_System = screenGui
+
+UI.ScreenGui = screenGui
+return screenGui
+
+end
+
+local function CreateBackdrop(parent) local backdrop = Instance.new("Frame") backdrop.Name = "Backdrop" backdrop.Size = UDim2.new(1, 0, 1, 0) backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0) backdrop.BackgroundTransparency = 0.1 backdrop.BorderSizePixel = 0 backdrop.ZIndex = 100 backdrop.Parent = parent
+
+UI.Backdrop = backdrop
+return backdrop
+
+end
+
+local function CreateContainer(parent) local container = Instance.new("Frame") container.Name = "MainContainer" container.Size = UDim2.new(0, 420, 0, 450) container.Position = UDim2.new(0.5, 0, 0.5, 0) container.AnchorPoint = Vector2.new(0.5, 0.5) container.BackgroundColor3 = Colors.Background container.BorderSizePixel = 0 container.ZIndex = 110 container.Selectable = false container.Parent = parent
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = container
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Colors.Border
+stroke.Thickness = 1
+stroke.Transparency = 0.3
+stroke.Parent = container
+
+local uiScale = Instance.new("UIScale")
+uiScale.Parent = container
+uiScale.Scale = 0.8
+
+UI.Container = container
+return container
+
+end
+
+local function CreateAnimatedBorder(parent) local border = Instance.new("Frame") border.Name = "AnimatedBorder" border.Size = UDim2.new(1, 6, 1, 6) border.Position = UDim2.new(0, -3, 0, -3) border.BackgroundTransparency = 1 border.ZIndex = 109 border.Selectable = false border.Parent = parent
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 23)
+corner.Parent = border
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(171, 0, 255)
+stroke.Thickness = 2
+stroke.Transparency = 0.3
+stroke.Parent = border
+
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new {
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(85, 0, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(171, 0, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(85, 0, 255))
+}
+gradient.Transparency = NumberSequence.new {
+    NumberSequenceKeypoint.new(0, 0.9),
+    NumberSequenceKeypoint.new(0.2, 0.1),
+    NumberSequenceKeypoint.new(0.8, 0.1),
+    NumberSequenceKeypoint.new(1, 0.9)
+}
+gradient.Parent = stroke
+
+UI.AnimatedBorder = { Frame = border, Gradient = gradient, Stroke = stroke }
+return border
+
+end
+
+-- ======================================== -- HEADER SECTION -- ========================================
+
+local function CreateHeader(parent) local header = Instance.new("Frame") header.Name = "Header" header.Size = UDim2.new(1, 0, 0, 100) header.BackgroundTransparency = 1 header.ZIndex = 11 header.Selectable = false header.Parent = parent
+
+local iconContainer = Instance.new("Frame")
+iconContainer.Size = UDim2.new(0, 56, 0, 56)
+iconContainer.Position = UDim2.new(0.5, -28, 0, 24)
+iconContainer.BackgroundColor3 = Colors.Primary
+iconContainer.BorderSizePixel = 0
+iconContainer.ZIndex = 12
+iconContainer.Selectable = false
+iconContainer.Parent = header
+
+local iconCorner = Instance.new("UICorner")
+iconCorner.CornerRadius = UDim.new(0, 14)
+iconCorner.Parent = iconContainer
+
+local iconGlow = Instance.new("Frame")
+iconGlow.Size = UDim2.new(1, 12, 1, 12)
+iconGlow.Position = UDim2.new(0, -6, 0, -6)
+iconGlow.BackgroundTransparency = 1
+iconGlow.ZIndex = 11
+iconGlow.Selectable = false
+iconGlow.Parent = iconContainer
+
+local glowCorner = Instance.new("UICorner")
+glowCorner.CornerRadius = UDim.new(0, 20)
+glowCorner.Parent = iconGlow
+
+local glowStroke = Instance.new("UIStroke")
+glowStroke.Color = Colors.NeonWhite
+glowStroke.Thickness = 3
+glowStroke.Transparency = 0.2
+glowStroke.Parent = iconGlow
+
+local glowGradient = Instance.new("UIGradient")
+glowGradient.Color = ColorSequence.new {
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(114, 137, 218)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(88, 101, 242)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(114, 137, 218))
+}
+glowGradient.Transparency = NumberSequence.new {
+    NumberSequenceKeypoint.new(0, 0.8),
+    NumberSequenceKeypoint.new(0.2, 0.05),
+    NumberSequenceKeypoint.new(0.8, 0.05),
+    NumberSequenceKeypoint.new(1, 0.8)
+}
+glowGradient.Parent = glowStroke
+
+local iconImage = Instance.new("ImageLabel")
+iconImage.Size = UDim2.new(1, 0, 1, 0)
+iconImage.Position = UDim2.new(0, 0, 0, 0)
+iconImage.BackgroundTransparency = 1
+iconImage.Image = "rbxassetid://125855589466752"
+iconImage.ImageColor3 = Colors.NeonWhite
+iconImage.ImageTransparency = 0.1
+iconImage.ScaleType = Enum.ScaleType.Fit
+iconImage.ZIndex = 13
+iconImage.Parent = iconContainer
+
+local iconImageCorner = Instance.new("UICorner")
+iconImageCorner.CornerRadius = UDim.new(0, 14)
+iconImageCorner.Parent = iconImage
+
+UI.Header = { Container = header, IconGlow = glowGradient, IconStroke = glowStroke }
+return header
+
+end
+
+-- ======================================== -- CONTENT SECTION -- ========================================
+
+local function CreateContent(parent) local content = Instance.new("Frame") content.Name = "Content" content.Size = UDim2.new(1, -64, 0, 440) content.Position = UDim2.new(0, 32, 0, 120) content.BackgroundTransparency = 1 content.ZIndex = 11 content.Selectable = false content.Parent = parent
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 32)
+title.BackgroundTransparency = 1
+title.Text = "Pulsar X - KeySys"
+title.TextColor3 = Colors.TextPrimary
+title.TextSize = 24
+title.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.ZIndex = 12
+title.Parent = content
+
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, 0, 0, 40)
+subtitle.Position = UDim2.new(0, 0, 0, 40)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "Enter your key to continue"
+subtitle.TextColor3 = Colors.TextSecondary
+subtitle.TextSize = 16
+subtitle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+subtitle.TextXAlignment = Enum.TextXAlignment.Center
+subtitle.TextWrapped = true
+subtitle.ZIndex = 12
+subtitle.Parent = content
+
+UI.Content = content
+return content
+
+end
+
+-- ======================================== -- INPUT SECTION -- ========================================
+
+local function CreateInputSection(parent) local section = Instance.new("Frame") section.Size = UDim2.new(1, 0, 0, 100) section.Position = UDim2.new(0, 0, 0, 100) section.BackgroundTransparency = 1 section.ZIndex = 12 section.Selectable = false section.Parent = parent
+
+local inputContainer = Instance.new("Frame")
+inputContainer.Size = UDim2.new(1, 0, 0, 52)
+inputContainer.BackgroundColor3 = Colors.Surface
+inputContainer.BorderSizePixel = 0
+inputContainer.ZIndex = 13
+inputContainer.Selectable = false
+inputContainer.Parent = section
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = inputContainer
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Colors.Border
+stroke.Thickness = 1
+stroke.Transparency = 0.3
+stroke.Parent = inputContainer
+
+local inputGlow = Instance.new("Frame")
+inputGlow.Size = UDim2.new(1, 8, 1, 8)
+inputGlow.Position = UDim2.new(0, -4, 0, -4)
+inputGlow.BackgroundTransparency = 1
+inputGlow.ZIndex = inputContainer.ZIndex - 1
+inputGlow.Visible = false
+inputGlow.Selectable = false
+inputGlow.Parent = inputContainer
+
+local glowCorner = Instance.new("UICorner")
+glowCorner.CornerRadius = UDim.new(0, 16)
+glowCorner.Parent = inputGlow
+
+local glowStroke = Instance.new("UIStroke")
+glowStroke.Color = Colors.NeonWhite
+glowStroke.Thickness = 2
+glowStroke.Transparency = 0.3
+glowStroke.Parent = inputGlow
+
+local glowGradient = Instance.new("UIGradient")
+glowGradient.Color = ColorSequence.new {
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 0, 180)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 0, 220)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 0, 180))
+}
+glowGradient.Transparency = NumberSequence.new {
+    NumberSequenceKeypoint.new(0, 0.85),
+    NumberSequenceKeypoint.new(0.2, 0.2),
+    NumberSequenceKeypoint.new(0.8, 0.2),
+    NumberSequenceKeypoint.new(1, 0.85)
+}
+glowGradient.Parent = glowStroke
+
+local textInput = Instance.new("TextBox")
+textInput.Size = UDim2.new(1, -24, 1, 0)
+textInput.Position = UDim2.new(0, 12, 0, 0)
+textInput.BackgroundTransparency = 1
+textInput.Text = ""
+textInput.TextTruncate = Enum.TextTruncate.AtEnd
+textInput.PlaceholderText = "Enter key here"
+textInput.TextColor3 = Colors.TextPrimary
+textInput.PlaceholderColor3 = Colors.TextSecondary
+textInput.TextSize = 16
+textInput.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold,
+    Enum.FontStyle.Normal)
+textInput.TextXAlignment = Enum.TextXAlignment.Left
+textInput.ClearTextOnFocus = false
+textInput.ZIndex = 14
+textInput.Selectable = true
+textInput.Parent = inputContainer
+
+local charCounter = Instance.new("TextLabel")
+charCounter.Size = UDim2.new(0, 80, 0, 20)
+charCounter.Position = UDim2.new(1, -85, 0, 60)
+charCounter.BackgroundTransparency = 1
+charCounter.Text = "0/" .. Config.MaxKeyLength
+charCounter.TextColor3 = Colors.TextSecondary
+charCounter.TextSize = 12
+charCounter.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold,
+    Enum.FontStyle.Normal)
+charCounter.TextXAlignment = Enum.TextXAlignment.Right
+charCounter.ZIndex = 13
+charCounter.Parent = section
+
+UI.Input = {
+    Container = inputContainer,
+    TextBox = textInput,
+    Counter = charCounter,
+    Stroke = stroke,
+    Glow = { Frame = inputGlow, Stroke = glowStroke, Gradient = glowGradient }
+}
+
+return section
+
+end
+
+-- ======================================== -- BUTTON SECTION -- ========================================
+
+local function CreateButtons(parent) local submitButton = Instance.new("TextButton") submitButton.Size = UDim2.new(1, 0, 0, 48) submitButton.Position = UDim2.new(0, 0, 0, 200) submitButton.BackgroundColor3 = Colors.Primary submitButton.BorderSizePixel = 0 submitButton.Text = "Continue" -- changed from "Verify Access Key" submitButton.TextColor3 = Colors.TextPrimary submitButton.TextSize = 16 submitButton.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal) submitButton.AutoButtonColor = false submitButton.ZIndex = 13 submitButton.Selectable = true submitButton.Parent = parent
+
+local submitCorner = Instance.new("UICorner")
+submitCorner.CornerRadius = UDim.new(0, 12)
+submitCorner.Parent = submitButton
+
+local loadingContainer = Instance.new("Frame")
+loadingContainer.Size = UDim2.new(0, 24, 0, 24)
+loadingContainer.Position = UDim2.new(0.5, -12, 0, 12)
+loadingContainer.BackgroundTransparency = 1
+loadingContainer.Visible = false
+loadingContainer.ZIndex = 14
+loadingContainer.Selectable = false
+loadingContainer.Parent = submitButton
+
+local spinner = Instance.new("Frame")
+spinner.Size = UDim2.new(1, 0, 1, 0)
+spinner.BackgroundColor3 = Colors.TextPrimary
+spinner.BorderSizePixel = 0
+spinner.ZIndex = 15
+spinner.Selectable = false
+spinner.Parent = loadingContainer
+
+local spinnerCorner = Instance.new("UICorner")
+spinnerCorner.CornerRadius = UDim.new(1, 0)
+spinnerCorner.Parent = spinner
+
+local spinnerGradient = Instance.new("UIGradient")
+spinnerGradient.Transparency = NumberSequence.new {
+    NumberSequenceKeypoint.new(0, 0),
+    NumberSequenceKeypoint.new(0.8, 0.8),
+    NumberSequenceKeypoint.new(1, 1)
+}
+spinnerGradient.Parent = spinner
+
+local buttonsContainer = Instance.new("Frame")
+buttonsContainer.Size = UDim2.new(1, 0, 0, 48)
+buttonsContainer.Position = UDim2.new(0, 0, 0, 260)
+buttonsContainer.BorderSizePixel = 0
+buttonsContainer.BackgroundTransparency = 1
+buttonsContainer.ZIndex = 13
+buttonsContainer.Parent = parent
+
+UI.Buttons = { Submit = submitButton, Loading = loadingContainer, Container = buttonsContainer }
+return submitButton
+
+end
+
+-- ======================================== -- LAUNCH / HOOKS -- ========================================
+
+-- Placeholder launch function. Replace its body with the actual script launch logic. local function LaunchScript() -- Example minimal behavior: disable GUI and print a message. if UI.ScreenGui then UI.ScreenGui.Enabled = false end pcall(function() print("[PulsarX] LaunchScript called (keyless). Add your payload here.)") end) end
+
+-- Build the UI and wire the continue button screenGui = CreateMainGUI() local backdrop = CreateBackdrop(screenGui) local container = CreateContainer(backdrop) CreateAnimatedBorder(container) CreateHeader(container) CreateContent(container) CreateInputSection(container) local submitBtn = CreateButtons(container)
+
+-- Show the UI screenGui.Enabled = true
+
+-- Wire submit (continue) button submitBtn.MouseButton1Click:Connect(function() -- brief visual feedback if ShowStatus exists, otherwise fallback to print if type(ShowStatus) == "function" then ShowStatus("Access granted. Launching...", false, true) else print("Access granted. Launching...") end
+
+-- small delay for UX; safe and short
+task.delay(0.12, LaunchScript)
+
+end)
+
+-- Optional: limit textbox length locally (keeps UI behavior similar to original) if UI and UI.Input and UI.Input.TextBox then UI.Input.TextBox:GetPropertyChangedSignal("Text"):Connect(function() local txt = UI.Input.TextBox.Text or "" if #txt > Config.MaxKeyLength then UI.Input.TextBox.Text = string.sub(txt, 1, Config.MaxKeyLength) end if UI.Input.Counter then UI.Input.Counter.Text = tostring(math.min(#txt, Config.MaxKeyLength)) .. "/" .. Config.MaxKeyLength end end) end
+
